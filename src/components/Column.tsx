@@ -1,8 +1,13 @@
 import TaskCard from './TaskCard';
 
+// definição da interface Task
 interface Task {
   id: string;
   title: string;
+  description: string;
+  link?: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: any;
 }
 
 interface ColumnProps {

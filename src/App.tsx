@@ -36,6 +36,11 @@ function App() {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [draggedFrom, setDraggedFrom] = useState<'afazer' | 'fazendo' | 'feito' | null>(null); // coluna de origem do drag
   const [loading, setLoading] = useState(true); // estado de loading das tarefas
+  const [description, setDescription] = useState(''); // nova descrição
+  const [createdAt, setCreatedAt] = useState(''); // nova data de criação
+  const [link, setLink] = useState(''); // novo link
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low'); // nova prioridade
+
 
   // Monitora mudanças na autenticação do usuário
   useEffect(() => {
@@ -106,13 +111,18 @@ function App() {
     setDraggedFrom(null);
   };
 
+  // envia nova tarefa para o Firebase
   const addTask = async () => {
     if (!user) return;
     if (newTaskContent.trim() === '') return;
 
     try {
-      await addTaskFirebase(newTaskContent, selectedColumn, user.uid);
+      await addTaskFirebase(newTaskContent, selectedColumn, user.uid, description, link, priority, createdAt);
       setNewTaskContent('');
+      setDescription('');
+      setLink('');
+      setPriority('low');
+      setCreatedAt('');
     } catch (error) {
       console.error('Erro ao adicionar tarefa:', error);
       alert('Erro ao adicionar tarefa. Tente novamente.');
@@ -181,6 +191,14 @@ function App() {
         selectedColumn={selectedColumn}
         setSelectedColumn={setSelectedColumn}
         addTask={addTask}
+        description={description}
+        setDescription={setDescription}
+        createdAt={createdAt}
+        setCreatedAt={setCreatedAt}
+        link={link}
+        setLink={setLink}
+        priority={priority}
+        setPriority={setPriority} 
       />
 
       <KanbanBoard

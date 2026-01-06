@@ -1,3 +1,4 @@
+
 interface TaskFormProps { // define as propriedades que o componente TaskForm vai receber
   newTaskContent: string; // o conteúdo da nova tarefa
   // novos campos
@@ -15,6 +16,7 @@ interface TaskFormProps { // define as propriedades que o componente TaskForm va
   addTask: () => void; // função para adicionar a nova tarefa
 }
 
+
 function TaskForm({
   newTaskContent,
   setNewTaskContent,
@@ -28,7 +30,7 @@ function TaskForm({
   setCreatedAt,
   selectedColumn,
   setSelectedColumn,
-  addTask
+  addTask,
 }: TaskFormProps) {
   return (
     <div className="task-form">
@@ -58,6 +60,11 @@ function TaskForm({
       onChange={(e) => setLink(e.target.value)}
       className="link-input"
       />
+
+      <button onClick={addTask} className="add-button">
+  {/* Se houver conteúdo e estivermos editando (lógica definida no App), mudamos o texto */}
+  {newTaskContent !== "" ? "💾 Salvar Alterações" : "➕ Adicionar"}
+</button>
 
      {/* PRIORIDADE E DATA EM UMA LINHA */}
       <div className="form-row">
@@ -94,6 +101,9 @@ function TaskForm({
         <button onClick={addTask} className="add-button">
           ➕ Adicionar
         </button>
+
+        
+        
       </div>
     </div>
   );

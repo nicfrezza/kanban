@@ -5,6 +5,7 @@ interface Task {
   link?: string;
   priority: 'low' | 'medium' | 'high';
   createdAt: any;
+  onEditTask?: (task: Task) => void;
 }
 
 interface TaskCardProps { // define as propriedades que o componente TaskCard vai receber
@@ -16,14 +17,15 @@ interface TaskCardProps { // define as propriedades que o componente TaskCard va
   createdAt: any;
   handleDragStart: (task: Task, columnId: string) => void;
   deleteTask: (columnId: string, taskId: string) => void;
+  onEditTask?: (task: Task) => void;
 }
 
 function TaskCard({
   task,
   columnId,
-  description,
   handleDragStart, // função que sera chamada quando a tarefa começar a ser arrastada
-  deleteTask // função que sera chamada ao clicar no botão de deletar
+  deleteTask, // função que sera chamada ao clicar no botão de deletar
+  onEditTask
 }: TaskCardProps) {
   return (
     <div
@@ -58,15 +60,25 @@ function TaskCard({
         </div>
       </div>
 
-      <button
-        onClick={() => deleteTask(columnId, task.id)}
-        className="delete-button"
-        title="Excluir tarefa"
-      >
-        🗑️
-      </button>
+     {/* Envolvendo os botões para organizar o posicionamento */}
+      <div className="task-actions">
+        <button
+          onClick={() => onEditTask && onEditTask(task)}
+          className="edit-button"
+          title="Editar tarefa"
+        >
+          ✏️
+        </button>
+
+        <button
+          onClick={() => deleteTask(columnId, task.id)}
+          className="delete-button"
+          title="Excluir tarefa"
+        >
+          🗑️
+        </button>
+      </div>
     </div>
   );
 }
-
 export default TaskCard;

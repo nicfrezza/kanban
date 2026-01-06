@@ -9,6 +9,7 @@ import {
   updateTaskStatus,
   deleteTask as deleteTaskFromFirebase,
   subscribeToUserTasks,
+  updateTask,
 } from './firebase/firebaseService';
 import type { Task } from './firebase/firebaseService';
 import { onAuthStateChange, logoutUser } from './firebase/authService';
@@ -25,6 +26,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   const [data, setData] = useState<TaskData>({
     afazer: [],
@@ -41,6 +43,18 @@ function App() {
   const [link, setLink] = useState(''); // novo link
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low'); // nova prioridade
 
+  const handleEditClick = (task: Task) => {
+    setEditingTask(task);
+    setNewTaskContent(task.title);
+    setDescription(task.description);
+    setLink(task.link || '');
+    setPriority(task.priority);
+    setCreatedAt(task.createdAt);
+    setSelectedColumn(task.status);
+    console.log("Botão de editar clicado! Dados da tarefa:", task);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+  };
 
   // Monitora mudanças na autenticação do usuário
   useEffect(() => {
@@ -129,6 +143,15 @@ function App() {
     }
   };
 
+  const clearForm = () => {
+    setNewTaskContent('');
+    setDescription('');
+    setLink('');
+    setPriority('low');
+    setCreatedAt('');
+    setEditingTask(null);
+  };
+
   const deleteTask = async (columnId: 'afazer' | 'fazendo' | 'feito', taskId: string) => {
     try {
       await deleteTaskFromFirebase(taskId);
@@ -138,6 +161,30 @@ function App() {
     }
   };
 
+const saveTask = async () => {
+  if (newTaskContent.trim() === '') return;
+
+  try {
+    if (editingTask && editingTask.id) {
+      // Lógica para editar tarefa existente
+      await updateTask(editingTask.id, {
+        title: newTaskContent,
+        description,
+        link,
+        priority,
+        createdAt,
+        status: selectedColumn as 'afazer' | 'fazendo' | 'feito'
+      });
+    } else {
+      // Caso caia aqui por algum motivo, ele apenas adiciona
+      await addTaskFirebase(newTaskContent, selectedColumn, user!.uid, description, link, priority, createdAt);
+    }
+    clearForm();
+  } catch (error) {
+    console.error('Erro ao salvar tarefa:', error);
+    alert('Erro ao salvar. Tente novamente.');
+  }
+};
   // Tela de loading inicial
   if (authLoading) {
     return (
@@ -149,6 +196,7 @@ function App() {
       </div>
     );
   }
+
 
   // Tela de autenticação (Login ou Registro)
   if (!user) {
@@ -190,7 +238,7 @@ function App() {
         setNewTaskContent={setNewTaskContent}
         selectedColumn={selectedColumn}
         setSelectedColumn={setSelectedColumn}
-        addTask={addTask}
+        addTask={editingTask ? saveTask : addTask} // se estiver editando, salva; senão, adiciona
         description={description}
         setDescription={setDescription}
         createdAt={createdAt}
@@ -207,6 +255,7 @@ function App() {
         handleDragOver={handleDragOver}
         handleDrop={handleDrop}
         deleteTask={deleteTask}
+        onEditTask={handleEditClick}
       />
     </div>
   );

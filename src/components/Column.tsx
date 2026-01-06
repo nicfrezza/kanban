@@ -8,6 +8,8 @@ interface Task {
   link?: string;
   priority: 'low' | 'medium' | 'high';
   createdAt: any;
+  onEditTask?: (task: Task) => void;
+
 }
 
 interface ColumnProps {
@@ -18,6 +20,7 @@ interface ColumnProps {
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (columnId: string) => void;
   deleteTask: (columnId: string, taskId: string) => void;
+  onEditTask?: (task: Task) => void;
 }
 
 const Column = ({
@@ -27,7 +30,8 @@ const Column = ({
   handleDragStart,
   handleDragOver,
   handleDrop,
-  deleteTask
+  deleteTask,
+  onEditTask
 }: ColumnProps) => {
   return (
     <div
@@ -52,6 +56,7 @@ const Column = ({
               columnId={columnId}
               handleDragStart={handleDragStart}
               deleteTask={deleteTask}
+              onEditTask={onEditTask} // editar
             />
           ))
         )}

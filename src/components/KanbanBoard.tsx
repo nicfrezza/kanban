@@ -3,6 +3,11 @@ import Column from './Column';
 interface Task {
   id: string;
   title: string;
+  description: string;
+  link?: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: any;
+  onEditTask?: (task: Task) => void;
 }
 
 interface KanbanBoardProps {
@@ -15,6 +20,7 @@ interface KanbanBoardProps {
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (columnId: string) => void;
   deleteTask: (columnId: string, taskId: string) => void;
+  onEditTask?: (task: Task) => void;
 }
 
 function KanbanBoard({
@@ -22,7 +28,8 @@ function KanbanBoard({
   handleDragStart,
   handleDragOver,
   handleDrop,
-  deleteTask
+  deleteTask,
+  onEditTask
 }: KanbanBoardProps) {
   const columnTitles = {
     afazer: 'A fazer',
@@ -32,16 +39,18 @@ function KanbanBoard({
 
   return (
     <div className="kanban-board">
-      {Object.keys(data).map((columnId) => (
+      {/* Aqui o Object.keys percorre as colunas */}
+      {(Object.keys(data) as Array<keyof typeof data>).map((columnId) => (
         <Column
           key={columnId}
           columnId={columnId}
-          title={columnTitles[columnId as keyof typeof columnTitles]}
-          tasks={data[columnId as keyof typeof data]}
+          title={columnTitles[columnId]}
+          tasks={data[columnId]} 
           handleDragStart={handleDragStart}
           handleDragOver={handleDragOver}
           handleDrop={handleDrop}
           deleteTask={deleteTask}
+          onEditTask={onEditTask}
         />
       ))}
     </div>

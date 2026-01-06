@@ -28,13 +28,20 @@ export interface Task {
   status: 'afazer' | 'fazendo' | 'feito';
   userId: string; // NOVO: ID do usuário dono da tarefa
   createdAt?: any;
+  description?: string;
+  link?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 // Adicionar uma nova tarefa (userId opcional)
 export const addTask = async (
   title: string,
   status: 'afazer' | 'fazendo' | 'feito',
-  userId?: string
+  userId?: string,
+  description?: string,
+  link?: string,
+  priority?: 'low' | 'medium' | 'high',
+  createdAt?: any
 ) => {
   try {
     const data: any = {
@@ -44,6 +51,18 @@ export const addTask = async (
     };
     if (userId) {
       data.userId = userId;
+    }
+    if (description) {
+      data.description = description;
+    }
+    if (link) {
+      data.link = link;
+    }
+    if (priority) {
+      data.priority = priority;
+    }
+    if (createdAt) {
+      data.createdAt = createdAt;
     }
 
     const docRef = await addDoc(tasksCollection, data);
@@ -65,6 +84,20 @@ export const updateTaskStatus = async (taskId: string, newStatus: 'afazer' | 'fa
     console.log('Status da tarefa atualizado');
   } catch (error) {
     console.error('Erro ao atualizar status:', error);
+    throw error;
+  }
+};
+
+//atualizar informações da tarefa
+export const updateTask = async (taskId: string, updatedData: Partial<Task>) => {
+  try {
+    const taskDoc = doc(db, 'tasks', taskId);
+    const { id, ...dataToUpdate } = updatedData as any; 
+    
+    await updateDoc(taskDoc, dataToUpdate);
+    console.log('Tarefa atualizada com sucesso!');
+  } catch (error) {
+    console.error('Erro ao atualizar tarefa:', error);
     throw error;
   }
 };

@@ -4,8 +4,8 @@ interface TaskFormProps { // define as propriedades que o componente TaskForm va
   // novos campos
  description: string;
   setDescription: (value: string) => void; 
-  createdAt: any;
-  setCreatedAt: (value: any) => void;
+ dueDate:string,
+ setDueDate: (value: string) => void;
   link?: string;
   setLink: (value: string) => void; 
   priority: 'low' | 'medium' | 'high';
@@ -14,6 +14,8 @@ interface TaskFormProps { // define as propriedades que o componente TaskForm va
   selectedColumn: string; // a coluna selecionada para adicionar a nova tarefa
   setSelectedColumn: (value: string) => void; // função para atualizar a coluna selecionada
   addTask: () => void; // função para adicionar a nova tarefa
+  isEditing: boolean; 
+  onCancel?: () => void; 
 }
 
 
@@ -26,11 +28,13 @@ function TaskForm({
   setLink,
   priority,
   setPriority,
-  createdAt,
-  setCreatedAt,
+  dueDate,
+  setDueDate,
   selectedColumn,
   setSelectedColumn,
   addTask,
+  isEditing, 
+  onCancel,  
 }: TaskFormProps) {
   return (
     <div className="task-form">
@@ -61,10 +65,7 @@ function TaskForm({
       className="link-input"
       />
 
-      <button onClick={addTask} className="add-button">
-  {/* Se houver conteúdo e estivermos editando (lógica definida no App), mudamos o texto */}
-  {newTaskContent !== "" ? "💾 Salvar Alterações" : "➕ Adicionar"}
-</button>
+  
 
      {/* PRIORIDADE E DATA EM UMA LINHA */}
       <div className="form-row">
@@ -78,13 +79,14 @@ function TaskForm({
           <option value="high">Alta</option>
         </select>
 
+       <label>Vence em:</label>
         <input 
-          type="date"
-          value={createdAt}
-          onChange={(e) => setCreatedAt(e.target.value)}
+          type="datetime-local" // Permite escolher data e hora
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
           className="date-input"
         />
-      </div>
+        </div>
 
     {/* SELEÇÃO DE COLUNA E BOTÃO */}
       <div className="form-row">
@@ -97,10 +99,16 @@ function TaskForm({
           <option value="fazendo">Fazendo</option>
           <option value="feito">Feito</option>
         </select>
-        
-        <button onClick={addTask} className="add-button">
-          ➕ Adicionar
+
+  <button onClick={addTask} className="add-button">
+          {isEditing ? "💾 Salvar Alterações" : "➕ Adicionar Tarefa"}
         </button>
+
+        {isEditing && (
+          <button onClick={onCancel} className="cancel-button" type="button">
+            ❌ Cancelar
+          </button>
+        )}
 
         
         

@@ -52,11 +52,19 @@ function TaskCard({
           <span className={`priority-tag ${task.priority}`}>
             {task.priority === 'high' ? '🔴 Alta' : task.priority === 'medium' ? '🟡 Média' : '🟢 Baixa'}
           </span>
-        <small className="task-date">
-  {task.createdAt && typeof task.createdAt === 'object' 
-    ? new Date((task.createdAt as any).seconds * 1000).toLocaleDateString('pt-BR') 
-    : task.createdAt}
-</small>
+      <div className="task-footer">
+  {task.dueDate && (
+    <span className="due-date-tag">
+      ⏱️ Limite: {new Date(task.dueDate).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}
+    </span>
+  )}
+  <span className={`priority-tag ${task.priority}`}>{task.priority}</span>
+</div>
         </div>
       </div>
 

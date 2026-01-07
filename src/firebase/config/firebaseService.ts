@@ -10,7 +10,8 @@ import {
   query,
   where,
   orderBy,
-  Timestamp 
+  Timestamp,
+  serverTimestamp 
 } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
@@ -26,8 +27,9 @@ export interface Task {
   id?: string;
   title: string;
   status: 'afazer' | 'fazendo' | 'feito';
-  userId: string; // NOVO: ID do usuário dono da tarefa
+  userId: string; 
   createdAt?: any;
+  dueDate: string;
   description?: string;
   link?: string;
   priority?: 'low' | 'medium' | 'high';
@@ -37,39 +39,28 @@ export interface Task {
 export const addTask = async (
   title: string,
   status: 'afazer' | 'fazendo' | 'feito',
-  userId?: string,
-  description?: string,
-  link?: string,
-  priority?: 'low' | 'medium' | 'high',
-  createdAt?: any
+  userId: string,
+  description: string,
+  link: string,
+  priority: 'low' | 'medium' | 'high',
+  dueDate: string,
+  projectId: string
 ) => {
   try {
-    const data: any = {
+    const docRef = await addDoc(collection(db, 'tasks'), {
       title,
       status,
-      createdAt: Timestamp.now()
-    };
-    if (userId) {
-      data.userId = userId;
-    }
-    if (description) {
-      data.description = description;
-    }
-    if (link) {
-      data.link = link;
-    }
-    if (priority) {
-      data.priority = priority;
-    }
-    if (createdAt) {
-      data.createdAt = createdAt;
-    }
-
-    const docRef = await addDoc(tasksCollection, data);
-    console.log('Tarefa adicionada com ID:', docRef.id);
+      userId,
+      description: description || '',
+      link: link || '',
+      priority: priority || 'low',
+      dueDate: dueDate || '', // PROTEÇÃO: Se for undefined, salva como string vazia
+      projectId,
+      createdAt: serverTimestamp(), // Melhor usar o do Firebase para consistência
+    });
     return docRef.id;
   } catch (error) {
-    console.error('Erro ao adicionar tarefa:', error);
+    console.error("Erro no serviço Firebase:", error);
     throw error;
   }
 };
@@ -115,26 +106,28 @@ export const deleteTask = async (taskId: string) => {
 };
 
 // Observar mudanças em tempo real nas tarefas DO USUÁRIO
-export const subscribeToUserTasks = (userId: string, callback: (tasks: Task[]) => void) => {
+export const subscribeToUserTasks = (
+  userId: string, 
+  projectId: string,
+  callback: (tasks: Task[]) => void) => {
   // Query que busca apenas tarefas do usuário logado
   const q = query(
     tasksCollection, 
     where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where ('projectId', '==', projectId),
+    orderBy('createdAt', 'desc'),
   );
   
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    const tasks: Task[] = [];
-    snapshot.forEach((doc) => {
-      tasks.push({
-        id: doc.id,
-        ...doc.data()
-      } as Task);
-    });
+    const tasks: Task[] = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    } as Task));
+
     callback(tasks);
   }, (error) => {
-    console.error('Erro ao observar tarefas:', error);
-  });
+    console.error("Erro ao observar tarefas do projeto:", error);
+  })
 
   return unsubscribe;
 };
@@ -157,6 +150,51 @@ export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
   });
 
   return unsubscribe;
+};
+
+// Criar projeto
+export const createProject = async (name: string, ownerId: string) => {
+  return await addDoc(collection(db, 'projects'), {
+    name,
+    ownerId,
+    createdAt: serverTimestamp()
+  });
+};
+
+
+// Buscar projetos do usuário
+export const subscribeToProjects = (userId: string, callback: (projects: any[]) => void) => {
+  const q = query(collection(db, 'projects'), where('ownerId', '==', userId));
+  return onSnapshot(q, (snapshot) => {
+    const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(projects);
+  });
+};
+
+// MODIFICAR: Buscar tarefas apenas do projeto específico
+export const subscribeToProjectTasks = (
+  userId: string, 
+  projectId: string, 
+  callback: (tasks: Task[]) => void 
+) => {
+  const q = query(
+    collection(db, 'tasks'),
+    where('userId', '==', userId),
+    where('projectId', '==', projectId)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const tasks = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Task[];
+    
+    if (typeof callback === 'function') {
+      callback(tasks);
+    }
+  }, (error) => {
+    console.error("Erro no Snapshot:", error);
+  });
 };
 
 export { db };

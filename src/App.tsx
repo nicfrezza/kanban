@@ -14,6 +14,9 @@ import {
 import type { Task } from './firebase/firebaseService';
 import { onAuthStateChange, logoutUser } from './firebase/authService';
 import './index.css';
+import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore'; 
+import { db } from './firebase/firebaseService'
 
 // Define a estrutura dos dados das tarefas por coluna
 interface TaskData {
@@ -22,11 +25,43 @@ interface TaskData {
   feito: Task[];
 }
 
+
+
 function App() {
+  const { projectId } = useParams<{ projectId: string } > ();
+  const [projectName, setProjectName] = useState('');  
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+
+  
+
+ const addTask = async () => {
+  if (!user || !projectId) return;
+  if (newTaskContent.trim() === '') return;
+
+  try {
+    await addTaskFirebase(
+      newTaskContent,
+      selectedColumn,
+      user.uid,
+      description,
+      link || '',   
+      priority,
+      dueDate || '', 
+      projectId      // O ID do projeto que veio do useParams
+    );
+    
+    clearForm(); // Limpa os campos e fecha o modal
+  } catch (error) {
+    console.error("Erro ao adicionar tarefa:", error);
+    alert("Não foi possível adicionar a tarefa.");
+  }
+};
   
   const [data, setData] = useState<TaskData>({
     afazer: [],
@@ -42,6 +77,49 @@ function App() {
   const [createdAt, setCreatedAt] = useState(''); // nova data de criação
   const [link, setLink] = useState(''); // novo link
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low'); // nova prioridade
+  const [dueDate, setDueDate] = useState<string>('');
+
+
+  useEffect(() => {
+  const fetchProjectName = async () => {
+    if (projectId) {
+      try {
+        const projectRef = doc(db, 'projects', projectId);
+        const projectSnap = await getDoc(projectRef);
+
+        if (projectSnap.exists()) {
+         const data = projectSnap.data();
+        setProjectName(data.name);
+        } else {
+          setProjectName('Projeto não encontrado');
+        }
+      } catch (error) {
+        console.error("Erro ao buscar nome do projeto:", error);
+        setProjectName('Erro ao carregar');
+      }
+    }
+  };
+
+  fetchProjectName();
+}, [projectId]);
+
+
+  const clearForm = () => {
+    setNewTaskContent('');
+    setDescription('');
+    setLink('');
+    setPriority('low');
+    setCreatedAt('');
+    setDueDate(''); // Limpa o novo campo de data também
+    setEditingTask(null);
+    setIsFormOpen(false); // FECHA O FORMULÁRIO
+  };
+
+  const filteredData = {
+  afazer: data.afazer.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+  fazendo: data.fazendo.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+  feito: data.feito.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+};
 
   const handleEditClick = (task: Task) => {
     setEditingTask(task);
@@ -51,6 +129,8 @@ function App() {
     setPriority(task.priority);
     setCreatedAt(task.createdAt);
     setSelectedColumn(task.status);
+    setDueDate(task.dueDate || ''); // Garante que a data de vencimento apareça no form
+    setIsFormOpen(true); // ABRE O FORMULÁRIO AO CLICAR EM EDITAR
     console.log("Botão de editar clicado! Dados da tarefa:", task);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
@@ -68,13 +148,13 @@ function App() {
 
   // Carrega tarefas quando o usuário está logado
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user || !projectId) return;
 
     setLoading(true); // Inicia o loading ao buscar tarefas
-    const unsubscribe = subscribeToUserTasks(user.uid, (tasks) => { // Filtra e agrupa tarefas por status
+    const unsubscribe = subscribeToUserTasks(
+      user.uid, 
+      projectId,
+      (tasks) => { // Filtra e agrupa tarefas por status
       const groupedTasks: TaskData = { // inicializa o objeto de tarefas agrupadas
         afazer: [],
         fazendo: [],
@@ -92,7 +172,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, projectId]);
 
   const handleLogout = async () => {
     try {
@@ -125,32 +205,7 @@ function App() {
     setDraggedFrom(null);
   };
 
-  // envia nova tarefa para o Firebase
-  const addTask = async () => {
-    if (!user) return;
-    if (newTaskContent.trim() === '') return;
 
-    try {
-      await addTaskFirebase(newTaskContent, selectedColumn, user.uid, description, link, priority, createdAt);
-      setNewTaskContent('');
-      setDescription('');
-      setLink('');
-      setPriority('low');
-      setCreatedAt('');
-    } catch (error) {
-      console.error('Erro ao adicionar tarefa:', error);
-      alert('Erro ao adicionar tarefa. Tente novamente.');
-    }
-  };
-
-  const clearForm = () => {
-    setNewTaskContent('');
-    setDescription('');
-    setLink('');
-    setPriority('low');
-    setCreatedAt('');
-    setEditingTask(null);
-  };
 
   const deleteTask = async (columnId: 'afazer' | 'fazendo' | 'feito', taskId: string) => {
     try {
@@ -162,29 +217,27 @@ function App() {
   };
 
 const saveTask = async () => {
-  if (newTaskContent.trim() === '') return;
+    if (newTaskContent.trim() === '') return;
 
-  try {
-    if (editingTask && editingTask.id) {
-      // Lógica para editar tarefa existente
-      await updateTask(editingTask.id, {
-        title: newTaskContent,
-        description,
-        link,
-        priority,
-        createdAt,
-        status: selectedColumn as 'afazer' | 'fazendo' | 'feito'
-      });
-    } else {
-      // Caso caia aqui por algum motivo, ele apenas adiciona
-      await addTaskFirebase(newTaskContent, selectedColumn, user!.uid, description, link, priority, createdAt);
+    try {
+      if (editingTask && editingTask.id) {
+        await updateTask(editingTask.id, {
+          title: newTaskContent,
+          description,
+          link,
+          priority,
+          dueDate: dueDate || '',
+          status: selectedColumn as 'afazer' | 'fazendo' | 'feito'
+        });
+      }
+      clearForm();
+    } catch (error) {
+      console.error('Erro ao salvar tarefa:', error);
+      alert('Erro ao salvar.');
     }
-    clearForm();
-  } catch (error) {
-    console.error('Erro ao salvar tarefa:', error);
-    alert('Erro ao salvar. Tente novamente.');
-  }
-};
+  };
+
+
   // Tela de loading inicial
   if (authLoading) {
     return (
@@ -219,20 +272,55 @@ const saveTask = async () => {
     );
   }
 
+
   return (
     <div className="app-container">
       <div className="header">
         <div className="header-content">
           <div>
-            <h1>📋 Kanban Board</h1>
-            <p>Olá, {user.email}! Organize suas tarefas</p>
+      <div className='nome-projeto'>
+    <h1 className="nome-projeto">
+          {projectName || 'Carregando...'}
+        </h1>      </div>      
+
+      <button 
+        onClick={() => navigate('/home')} 
+        className="btn-back" 
+        style={{ marginBottom: '10px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+      >
+        ← Voltar para Projetos
+      </button>
           </div>
           <button onClick={handleLogout} className="logout-button">
             🚪 Sair
           </button>
         </div>
-      </div>
+        <div className="search-bar-container">
+      <input 
+        type="text" 
+        placeholder="🔍 Pesquisar tarefas..." 
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-input"
+      />
+      <button 
+        className="btn-add-task" 
+        onClick={() => setIsFormOpen(true)}
+      >
+        ➕ Nova Tarefa
+      </button>
+    </div>
+</div>
+        
+  
 
+      {isFormOpen && (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
+          <button className="close-btn" onClick={clearForm}>&times;</button>
+        </div>
       <TaskForm
         newTaskContent={newTaskContent}
         setNewTaskContent={setNewTaskContent}
@@ -247,10 +335,17 @@ const saveTask = async () => {
         setLink={setLink}
         priority={priority}
         setPriority={setPriority} 
+        isEditing={!!editingTask}
+        onCancel={clearForm} 
+        dueDate={dueDate} // estado
+        setDueDate={setDueDate}
       />
+      </div>
+    </div>
+  )}
 
       <KanbanBoard
-        data={data}
+       data={filteredData}
         handleDragStart={handleDragStart}
         handleDragOver={handleDragOver}
         handleDrop={handleDrop}

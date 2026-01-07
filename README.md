@@ -160,9 +160,6 @@ Acesse `http://localhost:5173` no navegador.
 
 ## 🌟 Melhorias Futuras
 
-- [ ] Editar título das tarefas
-- [ ] Adicionar descrição e data de vencimento
-- [ ] Sistema de prioridades (baixa, média, alta)
 - [ ] Filtros e busca de tarefas
 - [ ] Temas claro/escuro
 - [ ] Múltiplos boards por usuário

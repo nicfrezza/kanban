@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as React from 'react';
 import type { User } from 'firebase/auth';
 import KanbanBoard from './components/KanbanBoard';
 import TaskForm from './components/TaskForm';
@@ -15,21 +16,56 @@ import type { Task } from './firebase/firebaseService';
 import { onAuthStateChange, logoutUser } from './firebase/authService';
 import './index.css';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore'; 
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase/firebaseService'
 
-// Define a estrutura dos dados das tarefas por coluna
+
+
 interface TaskData {
   afazer: Task[];
   fazendo: Task[];
   feito: Task[];
 }
 
+export function ThemeToggle() {
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDark) {
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+  }, [isDark]);
+
+  return (
+    <button
+      onClick={() => setIsDark(!isDark)}
+      className="theme-toggle-btn"
+      style={{
+        background: 'rgba(255,255,255,0.1)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        color: 'white',
+        padding: '8px',
+        borderRadius: '50%',
+        cursor: 'pointer',
+        fontSize: '1.2rem'
+      }}
+    >
+      {isDark ? '☀️' : '🌙'}
+    </button>
+  );
+}
 
 function App() {
-  const { projectId } = useParams<{ projectId: string } > ();
-  const [projectName, setProjectName] = useState('');  
+  const { projectId } = useParams<{ projectId: string }>();
+  const [projectName, setProjectName] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
@@ -38,70 +74,157 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  
 
- const addTask = async () => {
-  if (!user || !projectId) return;
-  if (newTaskContent.trim() === '') return;
-
-  try {
-    await addTaskFirebase(
-      newTaskContent,
-      selectedColumn,
-      user.uid,
-      description,
-      link || '',   
-      priority,
-      dueDate || '', 
-      projectId      // O ID do projeto que veio do useParams
-    );
-    
-    clearForm(); // Limpa os campos e fecha o modal
-  } catch (error) {
-    console.error("Erro ao adicionar tarefa:", error);
-    alert("Não foi possível adicionar a tarefa.");
-  }
-};
-  
   const [data, setData] = useState<TaskData>({
     afazer: [],
     fazendo: [],
     feito: []
   });
-  const [newTaskContent, setNewTaskContent] = useState(''); // conteúdo da nova tarefa
-  const [selectedColumn, setSelectedColumn] = useState<'afazer' | 'fazendo' | 'feito'>('afazer'); // coluna selecionada
+
+  const [newTaskContent, setNewTaskContent] = useState('');
+  const [selectedColumn, setSelectedColumn] = useState<'afazer' | 'fazendo' | 'feito'>('afazer');
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [draggedFrom, setDraggedFrom] = useState<'afazer' | 'fazendo' | 'feito' | null>(null); // coluna de origem do drag
-  const [loading, setLoading] = useState(true); // estado de loading das tarefas
-  const [description, setDescription] = useState(''); // nova descrição
-  const [createdAt, setCreatedAt] = useState(''); // nova data de criação
-  const [link, setLink] = useState(''); // novo link
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low'); // nova prioridade
+  const [draggedFrom, setDraggedFrom] = useState<'afazer' | 'fazendo' | 'feito' | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [description, setDescription] = useState('');
+  const [createdAt, setCreatedAt] = useState('');
+  const [link, setLink] = useState('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [dueDate, setDueDate] = useState<string>('');
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange((currentUser) => {
+      console.log("Estado da auth mudou:", currentUser);
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-  const fetchProjectName = async () => {
-    if (projectId) {
-      try {
-        const projectRef = doc(db, 'projects', projectId);
-        const projectSnap = await getDoc(projectRef);
+    const fetchProjectName = async () => {
+      if (projectId) {
+        try {
+          const projectRef = doc(db, 'projects', projectId);
+          const projectSnap = await getDoc(projectRef);
 
-        if (projectSnap.exists()) {
-         const data = projectSnap.data();
-        setProjectName(data.name);
-        } else {
-          setProjectName('Projeto não encontrado');
+          if (projectSnap.exists()) {
+            const data = projectSnap.data();
+            setProjectName(data.name);
+          } else {
+            setProjectName('Projeto não encontrado');
+          }
+        } catch (error) {
+          console.error("Erro ao buscar nome do projeto:", error);
+          setProjectName('Erro ao carregar');
         }
-      } catch (error) {
-        console.error("Erro ao buscar nome do projeto:", error);
-        setProjectName('Erro ao carregar');
       }
+    };
+
+    fetchProjectName();
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!user || !projectId) return;
+
+    setLoading(true);
+    const unsubscribe = subscribeToUserTasks(
+      user.uid,
+      projectId,
+      (tasks) => {
+        const groupedTasks: TaskData = {
+          afazer: [],
+          fazendo: [],
+          feito: []
+        };
+
+        tasks.forEach((task) => {
+          if (task.status && groupedTasks[task.status]) {
+            groupedTasks[task.status].push(task);
+          }
+        });
+
+        setData(groupedTasks);
+        setLoading(false);
+      });
+
+    return () => unsubscribe();
+  }, [user, projectId]);
+
+  if (authLoading) {
+    return <div className="loading-screen">Carregando...</div>;
+  }
+
+  if (!user) {
+    return showRegister ? (
+      <Register onSwitchToLogin={() => setShowRegister(false)} />
+    ) : (
+      <Login onSwitchToRegister={() => setShowRegister(true)} />
+    );
+  }
+
+  if (!projectId) {
+    return (
+      <div className="app-container">
+        <div className="header">
+          <h1>📋 Kanban Board</h1>
+          <p>Projeto não encontrado. Por favor, selecione um projeto válido.</p>
+          <button onClick={() => navigate('/home')} className="btn-back-link">
+            ← Voltar para Meus Projetos
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="app-container">
+        <div className="header">
+          <h1>📋 Kanban Board</h1>
+          <p>Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (!user) {
+    return showRegister ? (
+      <Register onSwitchToLogin={() => setShowRegister(false)} />
+    ) : (
+      <Login onSwitchToRegister={() => setShowRegister(true)} />
+    );
+  }
+
+
+  const addTask = async () => {
+    if (!user || !projectId) return;
+    if (newTaskContent.trim() === '') return;
+
+    try {
+      await addTaskFirebase(
+        newTaskContent,
+        selectedColumn,
+        user.uid,
+        description,
+        link || '',
+        priority,
+        dueDate || '',
+        projectId
+      );
+
+      clearForm();
+    } catch (error) {
+      console.error("Erro ao adicionar tarefa:", error);
+      alert("Não foi possível adicionar a tarefa.");
     }
   };
 
-  fetchProjectName();
-}, [projectId]);
+
+
+
 
 
   const clearForm = () => {
@@ -110,16 +233,16 @@ function App() {
     setLink('');
     setPriority('low');
     setCreatedAt('');
-    setDueDate(''); // Limpa o novo campo de data também
+    setDueDate('');
     setEditingTask(null);
-    setIsFormOpen(false); // FECHA O FORMULÁRIO
+    setIsFormOpen(false);
   };
 
   const filteredData = {
-  afazer: data.afazer.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
-  fazendo: data.fazendo.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
-  feito: data.feito.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
-};
+    afazer: data.afazer.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+    fazendo: data.fazendo.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+    feito: data.feito.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())),
+  };
 
   const handleEditClick = (task: Task) => {
     setEditingTask(task);
@@ -129,50 +252,12 @@ function App() {
     setPriority(task.priority);
     setCreatedAt(task.createdAt);
     setSelectedColumn(task.status);
-    setDueDate(task.dueDate || ''); // Garante que a data de vencimento apareça no form
-    setIsFormOpen(true); // ABRE O FORMULÁRIO AO CLICAR EM EDITAR
+    setDueDate(task.dueDate || '');
+    setIsFormOpen(true);
     console.log("Botão de editar clicado! Dados da tarefa:", task);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
+
   };
-
-  // Monitora mudanças na autenticação do usuário
-  useEffect(() => {
-    const unsubscribe = onAuthStateChange((currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Carrega tarefas quando o usuário está logado
-  useEffect(() => {
-    if (!user || !projectId) return;
-
-    setLoading(true); // Inicia o loading ao buscar tarefas
-    const unsubscribe = subscribeToUserTasks(
-      user.uid, 
-      projectId,
-      (tasks) => { // Filtra e agrupa tarefas por status
-      const groupedTasks: TaskData = { // inicializa o objeto de tarefas agrupadas
-        afazer: [],
-        fazendo: [],
-        feito: []
-      };
-
-      tasks.forEach((task) => { // agrupa as tarefas conforme o status
-        if (task.status && groupedTasks[task.status]) {
-          groupedTasks[task.status].push(task);
-        }
-      });
-
-      setData(groupedTasks);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, projectId]);
 
   const handleLogout = async () => {
     try {
@@ -216,7 +301,8 @@ function App() {
     }
   };
 
-const saveTask = async () => {
+
+  const saveTask = async () => {
     if (newTaskContent.trim() === '') return;
 
     try {
@@ -238,29 +324,6 @@ const saveTask = async () => {
   };
 
 
-  // Tela de loading inicial
-  if (authLoading) {
-    return (
-      <div className="app-container">
-        <div className="header">
-          <h1>📋 Kanban Board</h1>
-          <p>Verificando autenticação...</p>
-        </div>
-      </div>
-    );
-  }
-
-
-  // Tela de autenticação (Login ou Registro)
-  if (!user) {
-    return showRegister ? (
-      <Register onSwitchToLogin={() => setShowRegister(false)} />
-    ) : (
-      <Login onSwitchToRegister={() => setShowRegister(true)} />
-    );
-  }
-
-  // Tela principal do Kanban (usuário logado)
   if (loading) {
     return (
       <div className="app-container">
@@ -273,79 +336,90 @@ const saveTask = async () => {
   }
 
 
+
+
   return (
     <div className="app-container">
-      <div className="header">
+      <header className="header">
         <div className="header-content">
-          <div>
-      <div className='nome-projeto'>
-    <h1 className="nome-projeto">
-          {projectName || 'Carregando...'}
-        </h1>      </div>      
 
-      <button 
-        onClick={() => navigate('/home')} 
-        className="btn-back" 
-        style={{ marginBottom: '10px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-      >
-        ← Voltar para Projetos
-      </button>
+          <div className="header-info">
+            <div className="projeto-status-badge">
+              <span className="pulse-dot"></span> Projeto Ativo
+            </div>
+            <h1 className="nome-projeto">
+              {projectName || 'Carregando...'}
+            </h1>
+            <button onClick={() => navigate('/home')} className="btn-back-link">
+              ← Voltar para Meus Projetos
+            </button>
           </div>
-          <button onClick={handleLogout} className="logout-button">
-            🚪 Sair
+
+          <div className="header-controls">
+            <div className="theme-wrapper">
+              <ThemeToggle />
+            </div>
+            <button onClick={handleLogout} className="logout-button-modern">
+              Sair
+            </button>
+          </div>
+
+        </div>
+
+        <div className="search-bar-row">
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="🔍 Pesquisar tarefas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <button className="btn-add-task-primary" onClick={() => setIsFormOpen(true)}>
+            ➕ Nova Tarefa
           </button>
         </div>
-        <div className="search-bar-container">
-      <input 
-        type="text" 
-        placeholder="🔍 Pesquisar tarefas..." 
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
-      />
-      <button 
-        className="btn-add-task" 
-        onClick={() => setIsFormOpen(true)}
-      >
-        ➕ Nova Tarefa
-      </button>
-    </div>
-</div>
-        
-  
+      </header>
+
+
+
 
       {isFormOpen && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
-          <button className="close-btn" onClick={clearForm}>&times;</button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
+              <button className="close-btn" onClick={clearForm}>&times;</button>
+            </div>
+            <TaskForm
+              newTaskContent={newTaskContent}
+              setNewTaskContent={setNewTaskContent}
+              selectedColumn={selectedColumn}
+              setSelectedColumn={setSelectedColumn}
+              addTask={editingTask ? saveTask : addTask}
+              description={description}
+              setDescription={setDescription}
+              createdAt={createdAt}
+              setCreatedAt={setCreatedAt}
+              link={link}
+              setLink={setLink}
+              priority={priority}
+              setPriority={setPriority}
+              isEditing={!!editingTask}
+              onCancel={clearForm}
+              dueDate={dueDate}
+              setDueDate={setDueDate}
+            />
+          </div>
         </div>
-      <TaskForm
-        newTaskContent={newTaskContent}
-        setNewTaskContent={setNewTaskContent}
-        selectedColumn={selectedColumn}
-        setSelectedColumn={setSelectedColumn}
-        addTask={editingTask ? saveTask : addTask} // se estiver editando, salva; senão, adiciona
-        description={description}
-        setDescription={setDescription}
-        createdAt={createdAt}
-        setCreatedAt={setCreatedAt}
-        link={link}
-        setLink={setLink}
-        priority={priority}
-        setPriority={setPriority} 
-        isEditing={!!editingTask}
-        onCancel={clearForm} 
-        dueDate={dueDate} // estado
-        setDueDate={setDueDate}
-      />
-      </div>
-    </div>
-  )}
+      )}
+
+
+
 
       <KanbanBoard
-       data={filteredData}
+        data={filteredData}
         handleDragStart={handleDragStart}
         handleDragOver={handleDragOver}
         handleDrop={handleDrop}
@@ -353,7 +427,7 @@ const saveTask = async () => {
         onEditTask={handleEditClick}
       />
     </div>
-  );
+  )
 }
 
 export default App;

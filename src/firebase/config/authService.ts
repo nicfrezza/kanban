@@ -1,6 +1,6 @@
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -9,11 +9,9 @@ import type { User } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from './config';
 
-// Inicializa o app (se ainda não foi inicializado)
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Registrar novo usuário
 export const registerUser = async (email: string, password: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -25,7 +23,6 @@ export const registerUser = async (email: string, password: string) => {
   }
 };
 
-// Fazer login
 export const loginUser = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -37,7 +34,6 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
-// Fazer logout
 export const logoutUser = async () => {
   try {
     await signOut(auth);
@@ -48,17 +44,14 @@ export const logoutUser = async () => {
   }
 };
 
-// Observar mudanças no estado de autenticação
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
 
-// Obter usuário atual
 export const getCurrentUser = () => {
   return auth.currentUser;
 };
 
-// Mensagens de erro em português
 const getErrorMessage = (errorCode: string): string => {
   const errorMessages: { [key: string]: string } = {
     'auth/email-already-in-use': 'Este email já está em uso',

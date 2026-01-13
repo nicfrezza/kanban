@@ -18,7 +18,6 @@ const Login = ({ onSwitchToRegister }: LoginProps) => {
 
     try {
       await loginUser(email, password);
-      // Login bem-sucedido - App.tsx vai detectar automaticamente
     } catch (err: any) {
       setError(err.message);
     } finally {

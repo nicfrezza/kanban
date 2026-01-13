@@ -1,33 +1,30 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
   onSnapshot,
   query,
   where,
   orderBy,
   Timestamp,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
-// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Referência da coleção de tarefas
 const tasksCollection = collection(db, 'tasks');
 
-// Interface exportada
 export interface Task {
   id?: string;
   title: string;
   status: 'afazer' | 'fazendo' | 'feito';
-  userId: string; 
+  userId: string;
   createdAt?: any;
   dueDate: string;
   description?: string;
@@ -35,7 +32,6 @@ export interface Task {
   priority?: 'low' | 'medium' | 'high';
 }
 
-// Adicionar uma nova tarefa (userId opcional)
 export const addTask = async (
   title: string,
   status: 'afazer' | 'fazendo' | 'feito',
@@ -54,9 +50,9 @@ export const addTask = async (
       description: description || '',
       link: link || '',
       priority: priority || 'low',
-      dueDate: dueDate || '', // PROTEÇÃO: Se for undefined, salva como string vazia
+      dueDate: dueDate || '',
       projectId,
-      createdAt: serverTimestamp(), // Melhor usar o do Firebase para consistência
+      createdAt: serverTimestamp(),
     });
     return docRef.id;
   } catch (error) {
@@ -65,7 +61,6 @@ export const addTask = async (
   }
 };
 
-// Atualizar status da tarefa
 export const updateTaskStatus = async (taskId: string, newStatus: 'afazer' | 'fazendo' | 'feito') => {
   try {
     const taskDoc = doc(db, 'tasks', taskId);
@@ -79,12 +74,11 @@ export const updateTaskStatus = async (taskId: string, newStatus: 'afazer' | 'fa
   }
 };
 
-//atualizar informações da tarefa
 export const updateTask = async (taskId: string, updatedData: Partial<Task>) => {
   try {
     const taskDoc = doc(db, 'tasks', taskId);
-    const { id, ...dataToUpdate } = updatedData as any; 
-    
+    const { id, ...dataToUpdate } = updatedData as any;
+
     await updateDoc(taskDoc, dataToUpdate);
     console.log('Tarefa atualizada com sucesso!');
   } catch (error) {
@@ -93,7 +87,6 @@ export const updateTask = async (taskId: string, updatedData: Partial<Task>) => 
   }
 };
 
-// Deletar tarefa
 export const deleteTask = async (taskId: string) => {
   try {
     const taskDoc = doc(db, 'tasks', taskId);
@@ -105,19 +98,17 @@ export const deleteTask = async (taskId: string) => {
   }
 };
 
-// Observar mudanças em tempo real nas tarefas DO USUÁRIO
 export const subscribeToUserTasks = (
-  userId: string, 
+  userId: string,
   projectId: string,
   callback: (tasks: Task[]) => void) => {
-  // Query que busca apenas tarefas do usuário logado
   const q = query(
-    tasksCollection, 
+    tasksCollection,
     where('userId', '==', userId),
-    where ('projectId', '==', projectId),
+    where('projectId', '==', projectId),
     orderBy('createdAt', 'desc'),
   );
-  
+
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const tasks: Task[] = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -132,10 +123,9 @@ export const subscribeToUserTasks = (
   return unsubscribe;
 };
 
-// Observar mudanças em tempo real nas tarefas (todas)
 export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
   const q = query(tasksCollection, orderBy('createdAt', 'desc'));
-  
+
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const tasks: Task[] = [];
     snapshot.forEach((doc) => {
@@ -152,7 +142,6 @@ export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
   return unsubscribe;
 };
 
-// Criar projeto
 export const createProject = async (name: string, ownerId: string) => {
   return await addDoc(collection(db, 'projects'), {
     name,
@@ -162,7 +151,6 @@ export const createProject = async (name: string, ownerId: string) => {
 };
 
 
-// Buscar projetos do usuário
 export const subscribeToProjects = (userId: string, callback: (projects: any[]) => void) => {
   const q = query(collection(db, 'projects'), where('ownerId', '==', userId));
   return onSnapshot(q, (snapshot) => {
@@ -171,11 +159,10 @@ export const subscribeToProjects = (userId: string, callback: (projects: any[]) 
   });
 };
 
-// MODIFICAR: Buscar tarefas apenas do projeto específico
 export const subscribeToProjectTasks = (
-  userId: string, 
-  projectId: string, 
-  callback: (tasks: Task[]) => void 
+  userId: string,
+  projectId: string,
+  callback: (tasks: Task[]) => void
 ) => {
   const q = query(
     collection(db, 'tasks'),
@@ -188,7 +175,7 @@ export const subscribeToProjectTasks = (
       id: doc.id,
       ...doc.data()
     })) as Task[];
-    
+
     if (typeof callback === 'function') {
       callback(tasks);
     }

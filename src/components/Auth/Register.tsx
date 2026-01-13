@@ -16,7 +16,6 @@ const Register = ({ onSwitchToLogin }: RegisterProps) => {
     e.preventDefault();
     setError('');
 
-    // Validações
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
       return;
@@ -31,7 +30,6 @@ const Register = ({ onSwitchToLogin }: RegisterProps) => {
 
     try {
       await registerUser(email, password);
-      // Registro bem-sucedido - App.tsx vai detectar automaticamente
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -1,6 +1,5 @@
 import TaskCard from './TaskCard';
 
-// definição da interface Task
 interface Task {
   id: string;
   title: string;
@@ -56,7 +55,7 @@ const Column = ({
               columnId={columnId}
               handleDragStart={handleDragStart}
               deleteTask={deleteTask}
-              onEditTask={onEditTask} // editar
+              onEditTask={onEditTask}
             />
           ))
         )}

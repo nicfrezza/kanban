@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase/firebaseService'
 import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { onAuthStateChange, logoutUser } from  '../../firebase/authService'
+import { onAuthStateChange, logoutUser } from '../../firebase/authService'
 import type { User } from 'firebase/auth';
 
 interface Project {
@@ -19,7 +19,6 @@ const ProjectHome = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // 1. Monitorar Autenticação
   useEffect(() => {
     const unsubscribe = onAuthStateChange((currentUser) => {
       if (!currentUser) navigate('/login');
@@ -28,7 +27,6 @@ const ProjectHome = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // 2. Buscar Projetos do Usuário
   useEffect(() => {
     if (!user) return;
 
@@ -44,7 +42,6 @@ const ProjectHome = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Criar Novo Projeto
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectName.trim() || !user) return;
@@ -56,11 +53,10 @@ const ProjectHome = () => {
         ownerId: user.uid,
         createdAt: serverTimestamp()
       });
-      
+
       setProjectName('');
       setProjectDesc('');
       setIsModalOpen(false);
-      // Navega automaticamente para o novo projeto
       navigate(`/project/${docRef.id}`);
     } catch (error) {
       console.error("Erro ao criar projeto:", error);
@@ -71,7 +67,7 @@ const ProjectHome = () => {
     <div className="app-container">
       <header className="header-content">
         <div>
-          <h1>Mis Projetos</h1>
+          <h1>Meus Projetos</h1>
           <p>Olá, {user?.email}. Selecione um projeto para gerenciar.</p>
         </div>
         <button onClick={() => logoutUser()} className="logout-button">🚪 Sair</button>
@@ -83,11 +79,11 @@ const ProjectHome = () => {
         </button>
       </div>
 
-      <div className="kanban-board"> {/* Reutilizando o grid do Kanban para os cards */}
+      <div className="kanban-board">
         {projects.map((project) => (
-          <div 
-            key={project.id} 
-            className="task-card project-card" 
+          <div
+            key={project.id}
+            className="task-card project-card"
             onClick={() => navigate(`/project/${project.id}`)}
             style={{ cursor: 'pointer', borderLeftColor: 'var(--primary)' }}
           >
@@ -106,7 +102,6 @@ const ProjectHome = () => {
         )}
       </div>
 
-      {/* Modal de Criação */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -115,16 +110,16 @@ const ProjectHome = () => {
               <button className="close-btn" onClick={() => setIsModalOpen(false)}>&times;</button>
             </div>
             <form onSubmit={handleCreateProject} className="task-form" style={{ display: 'flex', flexDirection: 'column' }}>
-              <input 
-                type="text" 
-                placeholder="Nome do Projeto" 
+              <input
+                type="text"
+                placeholder="Nome do Projeto"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 className="task-input"
                 required
               />
-              <textarea 
-                placeholder="Descrição curta" 
+              <textarea
+                placeholder="Descrição curta"
                 value={projectDesc}
                 onChange={(e) => setProjectDesc(e.target.value)}
                 className="description-input"

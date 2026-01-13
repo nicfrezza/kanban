@@ -1,21 +1,20 @@
 
-interface TaskFormProps { // define as propriedades que o componente TaskForm vai receber
-  newTaskContent: string; // o conteúdo da nova tarefa
-  // novos campos
- description: string;
-  setDescription: (value: string) => void; 
- dueDate:string,
- setDueDate: (value: string) => void;
+interface TaskFormProps {
+  newTaskContent: string;
+  description: string;
+  setDescription: (value: string) => void;
+  dueDate: string,
+  setDueDate: (value: string) => void;
   link?: string;
-  setLink: (value: string) => void; 
+  setLink: (value: string) => void;
   priority: 'low' | 'medium' | 'high';
   setPriority: (value: 'low' | 'medium' | 'high') => void;
-  setNewTaskContent: (value: string) => void; // função para atualizar o conteúdo da nova tarefa
-  selectedColumn: string; // a coluna selecionada para adicionar a nova tarefa
-  setSelectedColumn: (value: string) => void; // função para atualizar a coluna selecionada
-  addTask: () => void; // função para adicionar a nova tarefa
-  isEditing: boolean; 
-  onCancel?: () => void; 
+  setNewTaskContent: (value: string) => void;
+  selectedColumn: string;
+  setSelectedColumn: (value: string) => void;
+  addTask: () => void;
+  isEditing: boolean;
+  onCancel?: () => void;
 }
 
 
@@ -33,41 +32,37 @@ function TaskForm({
   selectedColumn,
   setSelectedColumn,
   addTask,
-  isEditing, 
-  onCancel,  
+  isEditing,
+  onCancel,
 }: TaskFormProps) {
   return (
     <div className="task-form">
-      {/*TÍTULO*/}
-      <input 
-      type="text"
-      placeholder="Descrição da tarefa"
-      value={newTaskContent}
-      onChange={(e) => setNewTaskContent(e.target.value)}
-      className="task-input"
+      <input
+        type="text"
+        placeholder="Descrição da tarefa"
+        value={newTaskContent}
+        onChange={(e) => setNewTaskContent(e.target.value)}
+        className="task-input"
       />
 
 
-    {/* DESCRIÇÃO (description) */}
-      <textarea 
+      <textarea
         placeholder="Descrição detalhada..."
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className="description-input"
       />
 
-      {/*LINK*/}
-      <input 
-      type="text"
-      placeholder="Link relacionado (opcional)"
-      value={link}
-      onChange={(e) => setLink(e.target.value)}
-      className="link-input"
+      <input
+        type="text"
+        placeholder="Link relacionado (opcional)"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+        className="link-input"
       />
 
-  
 
-     {/* PRIORIDADE E DATA EM UMA LINHA */}
+
       <div className="form-row">
         <select
           value={priority}
@@ -79,16 +74,15 @@ function TaskForm({
           <option value="high">Alta</option>
         </select>
 
-       <label>Vence em:</label>
-        <input 
-          type="datetime-local" // Permite escolher data e hora
+        <label>Vence em:</label>
+        <input
+          type="datetime-local"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           className="date-input"
         />
-        </div>
+      </div>
 
-    {/* SELEÇÃO DE COLUNA E BOTÃO */}
       <div className="form-row">
         <select
           value={selectedColumn}
@@ -100,7 +94,7 @@ function TaskForm({
           <option value="feito">Feito</option>
         </select>
 
-  <button onClick={addTask} className="add-button">
+        <button onClick={addTask} className="add-button">
           {isEditing ? "💾 Salvar Alterações" : "➕ Adicionar Tarefa"}
         </button>
 
@@ -110,8 +104,8 @@ function TaskForm({
           </button>
         )}
 
-        
-        
+
+
       </div>
     </div>
   );

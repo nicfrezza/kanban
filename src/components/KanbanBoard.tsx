@@ -39,13 +39,12 @@ function KanbanBoard({
 
   return (
     <div className="kanban-board">
-      {/* Aqui o Object.keys percorre as colunas */}
       {(Object.keys(data) as Array<keyof typeof data>).map((columnId) => (
         <Column
           key={columnId}
           columnId={columnId}
           title={columnTitles[columnId]}
-          tasks={data[columnId]} 
+          tasks={data[columnId]}
           handleDragStart={handleDragStart}
           handleDragOver={handleDragOver}
           handleDrop={handleDrop}

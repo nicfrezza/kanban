@@ -61,7 +61,6 @@ function TaskCard({
                 })}
               </span>
             )}
-            <span className={`priority-tag ${task.priority}`}>{task.priority}</span>
           </div>
         </div>
       </div>

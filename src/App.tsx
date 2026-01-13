@@ -48,15 +48,6 @@ export function ThemeToggle() {
     <button
       onClick={() => setIsDark(!isDark)}
       className="theme-toggle-btn"
-      style={{
-        background: 'rgba(255,255,255,0.1)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        color: 'white',
-        padding: '8px',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        fontSize: '1.2rem'
-      }}
     >
       {isDark ? '☀️' : '🌙'}
     </button>
@@ -377,7 +368,7 @@ function App() {
             />
           </div>
           <button className="btn-add-task-primary" onClick={() => setIsFormOpen(true)}>
-            ➕ Nova Tarefa
+            ➕  Nova Tarefa
           </button>
         </div>
       </header>

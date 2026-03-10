@@ -8,7 +8,7 @@
 > Sistema completo de gerenciamento de tarefas estilo Kanban com autenticação de usuários, drag-and-drop e sincronização em tempo real.
 
 ## ☁️ LIVE DEMO: 
-https://kanban-app-sigma-tan.vercel.app/
+kanban-tarefas-w7.surge.sh/
 
 ## 🚀 Funcionalidades
 

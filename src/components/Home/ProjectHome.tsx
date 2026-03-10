@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase/firebaseService'
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { onAuthStateChange, logoutUser } from '../../firebase/authService'
 import type { User } from 'firebase/auth';
+import { ThemeToggle } from '../../App';
 
 interface Project {
   id: string;
@@ -62,6 +63,21 @@ const ProjectHome = () => {
       console.error("Erro ao criar projeto:", error);
     }
   };
+  const handleDeleteProject = async (projectId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (!window.confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'projects', projectId));
+    } catch (error) {
+      console.error("Erro ao deletar projeto:", error);
+      alert('Erro ao excluir projeto. Tente novamente.');
+    }
+  };
+
 
   return (
     <div className="app-container">
@@ -70,14 +86,25 @@ const ProjectHome = () => {
           <h1>Meus Projetos</h1>
           <p>Olá, {user?.email}. Selecione um projeto para gerenciar.</p>
         </div>
-        <button onClick={() => logoutUser()} className="logout-button">🚪 Sair</button>
+
+        <div className="header-actions">
+          <div className='theme-wrapper'>
+            <ThemeToggle />
+          </div>
+          <button onClick={() => logoutUser()} className="logout-button">
+            🚪 Sair
+          </button>
+        </div>
       </header>
+
+
 
       <div className="search-bar-container">
         <button className="btn-add-task" onClick={() => setIsModalOpen(true)}>
           ➕ Novo Projeto
         </button>
       </div>
+
 
       <div className="kanban-board">
         {projects.map((project) => (
@@ -87,6 +114,15 @@ const ProjectHome = () => {
             onClick={() => navigate(`/project/${project.id}`)}
             style={{ cursor: 'pointer', borderLeftColor: 'var(--primary)' }}
           >
+            <button
+              onClick={(e) => handleDeleteProject(project.id, e)}
+              className="delete-button"
+              title="Excluir projeto"
+              style={{ position: 'absolute', top: '10px', right: '10px' }}
+            >
+              🗑️
+            </button>
+
             <h3 className="task-title">{project.name}</h3>
             <p className="task-description">{project.description || 'Sem descrição.'}</p>
             <div className="task-footer">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { registerUser } from '../../firebase/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface RegisterProps {
   onSwitchToLogin: () => void;
@@ -11,6 +12,7 @@ const Register = ({ onSwitchToLogin }: RegisterProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ const Register = ({ onSwitchToLogin }: RegisterProps) => {
 
     try {
       await registerUser(email, password);
+      navigate('/homepage');
     } catch (err: any) {
       setError(err.message);
     } finally {

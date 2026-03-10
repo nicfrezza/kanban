@@ -55,14 +55,6 @@ body {
   margin: 0 auto;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 
 .header h1 {
   font-size: 2rem;
@@ -72,8 +64,7 @@ body {
 
 .logout-button {
   background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  border: 1px solid var(--border-color);
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -123,6 +114,7 @@ body {
   margin-top: 5px;
   text-decoration: underline rgba(255, 255, 255, 0);
   transition: all 0.2s;
+  padding-bottom: 1%;
 }
 
 .btn-back-link:hover {
@@ -270,28 +262,36 @@ body {
   border-top: 5px solid var(--success);
 }
 
-.theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --toggle-bg: rgba(255, 255, 255, 0.1);
+  --toggle-border: rgba(255, 255, 255, 0.2);
+  --toggle-color: #ffffff;
+  --toggle-hover: rgba(255, 255, 255, 0.2);
+}
 
+.theme-toggle-btn {
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
+  color: var(--toggle-color);
   padding: 8px;
   border-radius: 50%;
-
   cursor: pointer;
   font-size: 1.2rem;
-
   display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: all 0.2s ease;
 }
 
-
 .theme-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--toggle-hover);
   transform: scale(1.05);
 }
 
@@ -302,7 +302,6 @@ body {
 [data-theme="dark"] .theme-toggle-btn svg {
   transform: rotate(40deg);
 }
-
 
 /*EDITAR TAREFA*/
 
@@ -415,7 +414,7 @@ body {
   color: var(--text-main);
 }
 
-/*<-*/
+
 
 
 .priority-select {
@@ -428,6 +427,7 @@ body {
   display: flex;
   gap: 15px;
   margin-bottom: 30px;
+  margin-top: 30px;
 }
 
 .search-input {
@@ -450,6 +450,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
+  padding: 12px 24px;
 }
 
 .modal-overlay {
@@ -744,4 +745,22 @@ body.dark .form-group input {
 
 .task-link {
   color: rgb(100, 100, 100);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  color: var(--text-main);
+}
+
+.header-content>div:first-child {
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }

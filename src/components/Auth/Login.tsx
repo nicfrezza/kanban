@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { loginUser } from '../../firebase/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
   onSwitchToRegister: () => void;
@@ -10,6 +11,8 @@ const Login = ({ onSwitchToRegister }: LoginProps) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,12 +21,22 @@ const Login = ({ onSwitchToRegister }: LoginProps) => {
 
     try {
       await loginUser(email, password);
+      navigate('/homepage');
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleRegisterClick = () => {
+    if (onSwitchToRegister) {
+      onSwitchToRegister();
+    } else {
+      navigate('/register');
+    }
+  };
+
 
   return (
     <div className="auth-container">
@@ -68,7 +81,10 @@ const Login = ({ onSwitchToRegister }: LoginProps) => {
         <div className="auth-footer">
           <p>
             Não tem uma conta?{' '}
-            <button onClick={onSwitchToRegister} className="link-button">
+            <button
+              type="button"
+              onClick={handleRegisterClick}
+              className="link-button">
               Criar conta
             </button>
           </p>

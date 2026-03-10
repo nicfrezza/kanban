@@ -346,12 +346,12 @@ function App() {
             </button>
           </div>
 
-          <div className="header-controls">
-            <div className="theme-wrapper">
+          <div className="header-actions">
+            <div className='theme-wrapper'>
               <ThemeToggle />
             </div>
-            <button onClick={handleLogout} className="logout-button-modern">
-              Sair
+            <button onClick={() => logoutUser()} className="logout-button">
+              🚪 Sair
             </button>
           </div>
 

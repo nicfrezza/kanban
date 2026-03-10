@@ -8,7 +8,7 @@
 > Sistema completo de gerenciamento de tarefas estilo Kanban com autenticação de usuários, drag-and-drop e sincronização em tempo real.
 
 ## ☁️ LIVE DEMO: 
-kanban-tarefas-w7.surge.sh/
+https://kanban-tarefas-w7.surge.sh/
 
 ## 🚀 Funcionalidades
 

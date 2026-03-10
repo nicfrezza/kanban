@@ -160,9 +160,6 @@ Acesse `http://localhost:5173` no navegador.
 
 ## 🌟 Melhorias Futuras
 
-- [ ] Filtros e busca de tarefas
-- [ ] Temas claro/escuro
-- [ ] Múltiplos boards por usuário
 - [ ] Compartilhamento de boards
 - [ ] Notificações por email
 - [ ] Exportar tarefas (PDF, Excel)
